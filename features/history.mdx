@@ -1,0 +1,73 @@
+---
+title: History
+description: Automatic watch history tracking for every media item you open in MyLights.
+---
+
+MyLights automatically records every media item you open, keeping a rolling list of your 50 most recently viewed items. History is stored entirely in the browser and accessible from the **Verlauf** sidebar item.
+
+## How history is recorded
+
+History is updated every time you click a media card to open the player. The `handleMediaClick` handler in `frontend/app/(dashboard)/page.tsx` manages this:
+
+```tsx
+const handleMediaClick = (id: string) => {
+  const media = mediaList.find(m => m.id === id);
+  if (media) {
+    setCurMedia(media);
+    setPlayerOpen(true);
+
+    // Add to history (localStorage)
+    const savedHistory = localStorage.getItem('media_history');
+    let historyArr = savedHistory ? JSON.parse(savedHistory) : [];
+
+    // Move item to front if already present
+    historyArr = historyArr.filter((item: any) => item.id !== media.id);
+    historyArr.unshift(media);
+
+    // Keep only the 50 most recent
+    if (historyArr.length > 50) historyArr.pop();
+
+    localStorage.setItem('media_history', JSON.stringify(historyArr));
+  }
+};
+```
+
+## History behavior
+
+<AccordionGroup>
+  <Accordion title="Most recent item first">
+    Every time you open a media item, it is moved to the front of the history array using `unshift`. Re-opening the same item does not create a duplicate — the existing entry is removed first with `filter`, then re-inserted at position 0.
+  </Accordion>
+  <Accordion title="50-item limit">
+    After inserting the new item, if the array exceeds 50 entries the oldest entry is removed with `pop()`. This keeps memory usage bounded regardless of how long you use the app.
+  </Accordion>
+  <Accordion title="Full item objects stored">
+    Like favorites, history stores the complete `MediaItem` object (not just the ID), so the History view can render cards without extra API calls.
+  </Accordion>
+</AccordionGroup>
+
+## Storage
+
+History is stored in `localStorage` under the key `media_history` as a JSON-serialized array of `MediaItem` objects.
+
+```typescript
+export interface MediaItem {
+  id: string;
+  title: string;
+  description?: string;
+  type: MediaType | string;
+  signature: string;
+  url: string;
+  thumbnail: string;
+  duration?: string;
+  uploadDate?: string;
+}
+```
+
+## Accessing history
+
+Click **Verlauf** (clock icon) in the left sidebar to open the History view. The view reads `media_history` from localStorage and renders the items in the same card grid used throughout the app, with the most recently viewed item appearing first.
+
+<Warning>
+History is browser-local only. Clearing your browser's localStorage or switching to a different browser resets your entire history.
+</Warning>

@@ -1,80 +1,130 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get MyLights running locally in minutes — from a fresh clone to browsing your media library.
 ---
 
-## Get started in three steps
+<Steps>
+  <Step title="Prerequisites">
+    Before you begin, make sure you have the following installed:
 
-Get your documentation site running locally and make your first customization.
+    - **XAMPP** (includes Apache and MySQL/MariaDB) — [download from apachefriends.org](https://www.apachefriends.org/)
+    - **Node.js 18 or later** — [download from nodejs.org](https://nodejs.org/)
+    - **Git**
 
-### Step 1: Set up your local environment
+    Clone the repository:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```bash
+    git clone <your-repo-url> mylights
+    cd mylights
+    ```
+  </Step>
 
-### Step 2: Deploy your changes
+  <Step title="Start XAMPP">
+    Open the XAMPP Control Panel and start both the **Apache** and **MySQL** modules.
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    Once both show a green status, Apache is serving on port 80 and MySQL is available on port 3306.
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    <Tip>
+      If port 3306 is already in use on your machine, XAMPP may bind MySQL to port 3307 instead. If that happens, open `backend/config/db.php` and update the port value from `3306` to `3307`.
+    </Tip>
+  </Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Import the database">
+    Open **phpMyAdmin** at [http://localhost/phpmyadmin](http://localhost/phpmyadmin), then:
 
-### Step 3: Go live
+    1. Click **New** in the left sidebar and create a database named `media_host_db`.
+    2. Select the `media_host_db` database, go to the **Import** tab, and import `db/main.sql`.
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    This creates the full schema — `roles`, `users`, `media`, `media_type`, `category`, and `media_category`.
 
-## Next steps
+    <Note>
+      The repository includes `db/mock_data.sql` with sample media entries. Import it after `db/main.sql` to populate the library immediately and skip manual data entry during development.
+    </Note>
 
-Now that you have your docs running, explore these key features:
+    Alternatively, run the import from the command line:
 
-<CardGroup cols={2}>
+    <CodeGroup>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+    ```bash macOS / Linux
+    /Applications/XAMPP/xamppfiles/bin/mysql -u root media_host_db < db/main.sql
+    # Optional mock data:
+    /Applications/XAMPP/xamppfiles/bin/mysql -u root media_host_db < db/mock_data.sql
+    ```
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+    ```powershell Windows
+    & "C:\xampp\mysql\bin\mysql.exe" -u root media_host_db < db\main.sql
+    # Optional mock data:
+    & "C:\xampp\mysql\bin\mysql.exe" -u root media_host_db < db\mock_data.sql
+    ```
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+    </CodeGroup>
+  </Step>
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+  <Step title="Deploy the backend">
+    Copy the `backend/` folder into XAMPP's `htdocs` directory so Apache can serve the PHP API.
 
-</CardGroup>
+    <Tabs>
+      <Tab title="Windows">
+        Run the provided deploy script from the project root:
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+        ```powershell
+        .\deploy.ps1
+        ```
+
+        Or copy manually:
+
+        ```powershell
+        Copy-Item -Recurse -Force backend C:\xampp\htdocs\mylights-api
+        ```
+      </Tab>
+      <Tab title="macOS / Linux">
+        Run the provided deploy script from the project root:
+
+        ```bash
+        bash deploy.sh
+        ```
+
+        Or copy manually:
+
+        ```bash
+        cp -r backend /Applications/XAMPP/xamppfiles/htdocs/mylights-api
+        ```
+      </Tab>
+    </Tabs>
+
+    After copying, the API is reachable at `http://localhost/mylights-api/api`.
+
+    <Warning>
+      The frontend API client in `frontend/lib/api-client.ts` has the backend URL hardcoded to `http://localhost/backend/api`. If you deploy the backend to a different path (e.g., `mylights-api`), you must update that constant to match — otherwise all API requests will fail.
+    </Warning>
+  </Step>
+
+  <Step title="Install and start the frontend">
+    From the `frontend/` directory, install dependencies and start the development server:
+
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
+
+    The `dev` script starts Next.js on port 4000:
+
+    ```json
+    "dev": "next dev -p 4000"
+    ```
+
+    You should see output like:
+
+    ```
+    ▲ Next.js 16.1.6
+    - Local: http://localhost:4000
+    ```
+  </Step>
+
+  <Step title="Open MyLights">
+    Navigate to [http://localhost:4000](http://localhost:4000) in your browser.
+
+    If you imported `db/mock_data.sql`, your media library will already be populated and ready to browse.
+  </Step>
+</Steps>

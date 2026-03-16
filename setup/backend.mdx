@@ -1,0 +1,118 @@
+---
+title: Backend setup
+description: Deploy the PHP REST API to XAMPP Apache and configure the database connection.
+---
+
+## Prerequisites
+
+<Info>
+  XAMPP must be installed with the **Apache** module available. The MySQL module should already be running — complete the [database setup](/setup/database) first.
+</Info>
+
+Before setting up the backend, make sure:
+
+- XAMPP is installed
+- The MySQL database `media_host_db` has been created and the schema imported
+- The **Apache** module is available in the XAMPP Control Panel
+
+## Setup steps
+
+<Steps>
+  <Step title="Copy the backend files to htdocs">
+    Copy the entire `backend/` directory from the project root into the XAMPP `htdocs` folder, renaming it `mylights-api`.
+
+    <Tabs>
+      <Tab title="Windows">
+        Copy to:
+        ```
+        C:\xampp\htdocs\mylights-api\
+        ```
+      </Tab>
+      <Tab title="Linux">
+        Copy to:
+        ```bash
+        /opt/lampp/htdocs/mylights-api/
+        ```
+      </Tab>
+    </Tabs>
+
+    After copying, the structure inside `htdocs` should look like:
+
+    ```
+    htdocs/
+    └── mylights-api/
+        ├── config/
+        │   └── db.php
+        └── api/
+            └── stats.php
+            ...
+    ```
+  </Step>
+
+  <Step title="Configure the database connection">
+    Open `mylights-api/config/db.php` and verify the connection parameters match your XAMPP setup:
+
+    ```php
+    <?php
+    $host = 'localhost';
+    $user = 'root';
+    $password = '';
+    $database = 'media_host_db';
+    $port = 3306;
+
+    $conn = mysqli_connect($host, $user, $password, $database, $port);
+
+    if (!$conn) {
+        die(json_encode(["error" => "Connection failed: " . mysqli_connect_error()]));
+    }
+    ?>
+    ```
+
+    <Warning>
+      If your MySQL instance runs on port **3307** (see [port troubleshooting](/setup/database#port-troubleshooting)), change `$port = 3306;` to `$port = 3307;` here.
+    </Warning>
+
+    <Note>
+      The default XAMPP MySQL user is `root` with an empty password. If you have set a custom password, update the `$password` value accordingly.
+    </Note>
+  </Step>
+
+  <Step title="Start the Apache module">
+    Open the XAMPP Control Panel and click **Start** next to the **Apache** module. The status indicator should turn green and Apache should bind to port **80**.
+  </Step>
+
+  <Step title="Verify the API is responding">
+    Open your browser and navigate to:
+
+    ```
+    http://localhost/backend/api/stats.php
+    ```
+
+    A successful response returns JSON. A blank page or 404 means Apache is not serving files from the correct directory — double-check that you copied the files to `htdocs/mylights-api/`.
+
+    <Tip>
+      You can also use `curl` to verify from the command line:
+      ```bash
+      curl http://localhost/backend/api/stats.php
+      ```
+    </Tip>
+  </Step>
+</Steps>
+
+## CORS headers
+
+Each PHP endpoint in the API sets the following response header to allow the frontend (running on a different port) to make cross-origin requests:
+
+```php
+header("Access-Control-Allow-Origin: *");
+```
+
+<Warning>
+  `Access-Control-Allow-Origin: *` allows requests from any origin. This is acceptable for local development but should be restricted to a specific origin in any internet-facing deployment.
+</Warning>
+
+## Authentication
+
+<Note>
+  `auth.php` currently exists in the API directory but is empty — authentication is a planned feature and has not yet been implemented. All API endpoints are currently unauthenticated.
+</Note>

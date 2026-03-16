@@ -1,0 +1,104 @@
+---
+title: 'Deployment scripts'
+description: 'Automate copying the MyLights backend PHP files to XAMPP htdocs using the included deployment scripts.'
+---
+
+MyLights includes shell scripts that copy the `backend/` directory to your local XAMPP `htdocs` folder. Run these scripts after making changes to any backend PHP files to keep your locally served API in sync.
+
+## What the scripts do
+
+The scripts copy everything inside `backend/` to a `mylights-api` subdirectory in your XAMPP web root:
+
+```
+backend/
+├── api/
+│   ├── auth.php
+│   ├── db_test.php
+│   ├── search.php
+│   └── stats.php
+└── config/
+    └── db.php
+```
+
+After running the script, these files are served by Apache at `http://localhost/mylights-api/`.
+
+## Destination paths
+
+| OS | Destination |
+|---|---|
+| Windows | `C:\xampp\htdocs\mylights-api` |
+| Linux | `/opt/lampp/htdocs/mylights-api` |
+| macOS | `/Applications/XAMPP/htdocs/mylights-api` |
+
+## Running the scripts
+
+<Tabs>
+  <Tab title="Linux / macOS">
+    Use `deploy.sh`. Make it executable first, then run it from the project root:
+
+    ```bash
+    chmod +x deploy.sh && ./deploy.sh
+    ```
+
+    The script:
+
+    ```bash
+    #!/bin/bash
+    # Copies backend/ API files to XAMPP htdocs
+    DEST="/opt/lampp/htdocs/mylights-api"
+    SOURCE="./backend"
+
+    echo "Deploying MyLights backend to $DEST..."
+    mkdir -p "$DEST"
+    cp -r "$SOURCE"/* "$DEST/"
+    echo "Done. Backend deployed to $DEST"
+    ```
+
+    <Note>
+      On macOS, the destination path is `/Applications/XAMPP/htdocs/mylights-api` instead of `/opt/lampp/htdocs/mylights-api`. Edit the `DEST` variable in `deploy.sh` if you are on macOS.
+    </Note>
+  </Tab>
+
+  <Tab title="Windows">
+    Use `deploy.ps1` in PowerShell. Run it from the project root:
+
+    ```powershell
+    .\deploy.ps1
+    ```
+
+    Alternatively, right-click `deploy.ps1` in Explorer and select **Run with PowerShell**.
+
+    The script:
+
+    ```powershell
+    # Copies backend/ API files to XAMPP htdocs on Windows
+    $dest = "C:\xampp\htdocs\mylights-api"
+    $source = ".\backend"
+
+    Write-Host "Deploying MyLights backend to $dest..."
+    if (!(Test-Path $dest)) {
+        New-Item -ItemType Directory -Path $dest | Out-Null
+    }
+    Copy-Item -Path "$source\*" -Destination $dest -Recurse -Force
+    Write-Host "Done. Backend deployed to $dest"
+    ```
+
+    <Warning>
+      Windows may block running PowerShell scripts by default. If you see an error about execution policy, run this once in an elevated PowerShell window:
+
+      ```powershell
+      Set-ExecutionPolicy RemoteSigned
+      ```
+
+      This allows locally created scripts to run while still requiring remote scripts to be signed.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## When to run the scripts
+
+Run the appropriate script after every change to a file in `backend/`. The scripts overwrite the destination with the current source, so the deployed version always reflects your latest edits.
+
+<Tip>
+  Keep a terminal open at the project root while developing. Run `./deploy.sh` (or `.\deploy.ps1`) immediately after saving backend changes so the API served by Apache stays in sync without requiring a manual copy.
+</Tip>

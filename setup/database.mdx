@@ -1,0 +1,128 @@
+---
+title: Database setup
+description: Create and configure the MySQL/MariaDB database for MyLights using XAMPP.
+---
+
+## Prerequisites
+
+<Info>
+  XAMPP must be installed with the **MySQL** module available. Download XAMPP from [apachefriends.org](https://www.apachefriends.org).
+</Info>
+
+Before setting up the database, make sure:
+
+- XAMPP is installed
+- The **MySQL** module is started in the XAMPP Control Panel
+- phpMyAdmin is accessible at `http://localhost/phpmyadmin`
+
+## Setup steps
+
+<Steps>
+  <Step title="Start the MySQL module">
+    Open the XAMPP Control Panel and click **Start** next to the **MySQL** module. The status indicator should turn green.
+
+    <Warning>
+      If MySQL fails to start, another process may already be using port 3306. Check the XAMPP logs or try port 3307 — see the [port troubleshooting](#port-troubleshooting) section below.
+    </Warning>
+  </Step>
+
+  <Step title="Open phpMyAdmin">
+    Navigate to `http://localhost/phpmyadmin` in your browser. You should see the phpMyAdmin dashboard.
+  </Step>
+
+  <Step title="Create the database">
+    In phpMyAdmin, click **New** in the left sidebar. Enter `media_host_db` as the database name and click **Create**.
+
+    <Note>
+      The schema file targets the database name `media_host_db`. Use this exact name to avoid updating the connection config.
+    </Note>
+  </Step>
+
+  <Step title="Import the schema">
+    With `media_host_db` selected in the sidebar:
+
+    1. Click the **Import** tab
+    2. Click **Choose File** and select `db/main.sql` from the project root
+    3. Click **Go**
+
+    phpMyAdmin will execute the SQL and create all tables.
+  </Step>
+
+  <Step title="Import mock data (optional)">
+    To populate the database with sample records for development and testing:
+
+    1. Click the **Import** tab again
+    2. Select `db/mock_data.sql` from the project root
+    3. Click **Go**
+
+    <Tip>
+      Mock data is useful for exploring the UI without having to upload real media files. Skip this step for a clean production setup.
+    </Tip>
+  </Step>
+</Steps>
+
+## Table overview
+
+The schema in `db/main.sql` creates the following tables:
+
+```sql
+CREATE DATABASE IF NOT EXISTS media_host_db;
+USE media_host_db;
+```
+
+<CardGroup cols={2}>
+  <Card title="roles" icon="shield">
+    Defines user roles (e.g., admin, viewer). Each role has a unique `role_name` and an optional `description`.
+  </Card>
+  <Card title="users" icon="user">
+    Stores user accounts with hashed passwords and email addresses. Each user is assigned a role via `roleID`.
+  </Card>
+  <Card title="media_type" icon="file">
+    Enumerates supported media types (e.g., video, image). Stores the MIME type alongside a human-readable name.
+  </Card>
+  <Card title="media" icon="photo-film">
+    The central table. Each row represents an uploaded media item with a title, description, file path, file size, upload timestamp, and media type.
+  </Card>
+  <Card title="category" icon="folder">
+    Hierarchical category tree. The `parentID` column references `categoryID` in the same table, allowing unlimited nesting.
+  </Card>
+  <Card title="media_category" icon="tags">
+    Junction table that maps media items to one or more categories. The composite primary key `(mediaID, categoryID)` prevents duplicate assignments.
+  </Card>
+</CardGroup>
+
+### Hierarchical categories
+
+The `category` table supports nested categories through a self-referencing foreign key:
+
+```sql
+CREATE TABLE IF NOT EXISTS category (
+    categoryID INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    parentID INT NULL,
+    FOREIGN KEY (parentID) REFERENCES category(categoryID) ON DELETE SET NULL ON UPDATE CASCADE
+);
+```
+
+<Note>
+  Setting `parentID` to `NULL` marks a top-level category. Child categories point to their parent's `categoryID`. When a parent category is deleted, its children's `parentID` is set to `NULL` rather than cascading the deletion.
+</Note>
+
+## Port troubleshooting
+
+MyLights connects to MySQL on port **3306** by default. Some XAMPP installations — particularly when another MySQL service is already running — bind to port **3307** instead.
+
+If you see a connection error, check which port MySQL is using:
+
+<Tabs>
+  <Tab title="Windows">
+    Open the XAMPP Control Panel, click **Config** next to MySQL, and inspect `my.ini`. Look for the `port` value under `[mysqld]`.
+  </Tab>
+  <Tab title="Linux / macOS">
+    ```bash
+    grep -r 'port' /opt/lampp/etc/my.cnf
+    ```
+  </Tab>
+</Tabs>
+
+If MySQL is running on 3307, update `backend/config/db.php` accordingly — see the [backend setup](/setup/backend) page.

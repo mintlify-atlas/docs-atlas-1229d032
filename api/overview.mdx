@@ -1,0 +1,67 @@
+---
+title: 'API overview'
+description: 'Reference for the MyLights Media Browser REST API. All endpoints are served by PHP 8 via Apache (XAMPP) and return JSON.'
+---
+
+The MyLights API is a PHP 8 REST API served by Apache via XAMPP. All endpoints accept HTTP GET requests and return JSON.
+
+## Base URL
+
+```
+http://localhost/backend/api
+```
+
+## General conventions
+
+- **Method:** All endpoints use `GET`
+- **Response format:** `Content-Type: application/json; charset=UTF-8`
+- **CORS:** `Access-Control-Allow-Origin: *` — open to all origins
+- **Authentication:** Not currently required. `auth.php` is a planned feature.
+
+## Error responses
+
+All endpoints return HTTP 500 with a JSON body on failure:
+
+```json
+{ "error": "message" }
+```
+
+## Endpoints
+
+| Method | Path | Description | Status |
+|--------|------|-------------|--------|
+| `GET` | [`/search.php`](/api/search) | Search and filter media items | Available |
+| `GET` | [`/stats.php`](/api/stats) | Retrieve database-wide media statistics | Available |
+| `GET` | [`/auth.php`](/api/auth) | User authentication | Planned |
+
+## TypeScript client
+
+A typed client is available at `frontend/lib/api-client.ts`. It wraps both available endpoints:
+
+```typescript
+import { searchMedia, getStats } from '../lib/api-client';
+
+// Search media
+const results = await searchMedia('nature', 'Video');
+
+// Fetch stats
+const stats = await getStats();
+```
+
+<Note>
+The client functions return empty arrays or `null` on error rather than throwing, so always check return values before use.
+</Note>
+
+## Explore endpoints
+
+<Columns cols={3}>
+  <Card title="Search" icon="magnifying-glass" href="/api/search">
+    Query and filter media by title, description, category, and type.
+  </Card>
+  <Card title="Stats" icon="chart-bar" href="/api/stats">
+    Retrieve counts, storage totals, and the latest upload timestamp.
+  </Card>
+  <Card title="Auth" icon="lock" href="/api/auth">
+    Planned authentication endpoint for user login and role-based access.
+  </Card>
+</Columns>

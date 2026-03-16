@@ -1,0 +1,88 @@
+---
+title: Introduction
+description: MyLights is a self-hosted local media browser for managing, searching, and playing your video, image, and audio files.
+---
+
+# MyLights Media Browser
+
+MyLights is a self-hosted web application that gives you a fast, modern interface for browsing and playing your local media collection. Originally designed as an Electron desktop app, it was rebuilt on **Next.js** and a **PHP/MySQL** backend to deliver better performance and a richer browser-based experience.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get MyLights running on your machine in minutes
+  </Card>
+  <Card title="Setup Guide" icon="wrench" href="/setup/database">
+    Step-by-step instructions for database, backend, and frontend
+  </Card>
+  <Card title="Features" icon="sparkles" href="/features/media-browser">
+    Explore the media browser, search, favorites, and more
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Explore the PHP REST API endpoints
+  </Card>
+</CardGroup>
+
+## What is MyLights?
+
+MyLights connects to your local MySQL database of media metadata and presents it through a responsive, YouTube-inspired grid interface. You can browse images, videos, and audio clips; search by title, description, or category; organize content into playlists; and keep track of what you've watched through automatic history tracking.
+
+The system runs entirely on your local machine via **XAMPP**, which bundles Apache (for PHP) and MariaDB (MySQL) into a single install — no cloud accounts or subscriptions required.
+
+## Architecture overview
+
+MyLights uses a classic client-server split optimized for self-hosting:
+
+| Layer | Technology | Role |
+|---|---|---|
+| Frontend | Next.js 16 + TypeScript + Tailwind CSS | UI, routing, client-side state |
+| Backend | PHP 8 (Apache via XAMPP) | REST API for media search and stats |
+| Database | MySQL / MariaDB (XAMPP) | Stores media metadata and categories |
+
+```
+Browser (Next.js on :4000)
+        │
+        │ HTTP fetch
+        ▼
+Apache (XAMPP on :80)
+  └── /backend/api/search.php
+  └── /backend/api/stats.php
+  └── /backend/api/auth.php
+        │
+        │ mysqli
+        ▼
+MySQL / MariaDB (XAMPP on :3306)
+  └── media_host_db
+```
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Media grid browser" icon="grid-2">
+    Responsive grid view for images, videos, and audio with lazy-loaded thumbnails
+  </Card>
+  <Card title="Real-time search" icon="magnifying-glass">
+    Search across titles, descriptions, and hierarchical categories via the PHP API
+  </Card>
+  <Card title="Auto thumbnail extraction" icon="film">
+    Extracts video frames using FFmpeg/WASM — no server-side processing needed
+  </Card>
+  <Card title="Category filtering" icon="filter">
+    Filter content by hierarchical category signatures like `Heilkunde > Natur`
+  </Card>
+  <Card title="Favorites" icon="heart">
+    Like any media item and find it instantly in your Favorites view
+  </Card>
+  <Card title="Watch history" icon="clock">
+    Automatically tracks the last 50 items you've opened
+  </Card>
+  <Card title="Playlists" icon="list-music">
+    Group media items into custom playlists
+  </Card>
+  <Card title="Stats dashboard" icon="chart-bar">
+    See total media counts, storage usage, and per-type breakdowns at a glance
+  </Card>
+</CardGroup>
+
+## License
+
+MyLights is released under the **GPL-3.0** license. See the [LICENSE](https://github.com/HardBoss07/m106-media-project/blob/main/LICENSE) file for details.

@@ -1,0 +1,46 @@
+---
+title: 'Auth'
+description: 'Planned authentication endpoint for user login and role-based access control.'
+---
+
+<Warning>
+This endpoint is not yet implemented. `backend/api/auth.php` exists in the codebase but is currently empty (0 bytes). The information on this page describes the intended design based on the existing database schema.
+</Warning>
+
+`GET /backend/api/auth.php`
+
+When implemented, this endpoint will handle user authentication and return credentials or session tokens that restrict access to protected resources based on the caller's assigned role.
+
+## Database schema
+
+The database already includes the tables required to support authentication.
+
+### `users` table
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `userID` | `INT` | Primary key, auto-increment |
+| `username` | `VARCHAR(50)` | Unique, not null |
+| `password_hash` | `VARCHAR(255)` | Not null |
+| `email` | `VARCHAR(255)` | Unique, not null |
+| `roleID` | `INT` | Foreign key → `roles.roleID` |
+
+### `roles` table
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `roleID` | `INT` | Primary key |
+| `role_name` | `VARCHAR(50)` | Unique, not null |
+| `description` | `VARCHAR(255)` | — |
+
+## What authentication will enable
+
+Once implemented, the auth endpoint is expected to provide:
+
+- **User login** — verify credentials against the `users` table and return a session token or response that the frontend client can store
+- **Role-based access control** — restrict certain API operations or media items based on the `roles` assignment linked to the authenticated user
+- **Protected endpoints** — future endpoints can require a valid token, making the current open-access model opt-in per route
+
+<Info>
+All other endpoints currently operate without authentication. Introducing auth will be a breaking change for clients that do not update to include credentials in their requests.
+</Info>

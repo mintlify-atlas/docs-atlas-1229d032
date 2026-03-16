@@ -1,0 +1,85 @@
+---
+title: Categories
+description: Hierarchical category system for organizing and filtering media in MyLights.
+---
+
+Categories give your media library a hierarchical structure. Every media item belongs to a category, which can itself belong to a parent category, forming a tree of any depth. You can filter the media grid to a specific category by clicking its pill in the sidebar.
+
+## Database structure
+
+Categories are stored in the MySQL `category` table with a self-referencing `parentID` column:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | INT | Primary key |
+| `name` | VARCHAR | Category display name (e.g., `Natur`) |
+| `parentID` | INT (nullable) | ID of the parent category, or `NULL` for root |
+
+This structure supports unlimited nesting depth.
+
+## Category signatures
+
+A **signature** is the full path from the root to a category, with levels joined by ` > `:
+
+```
+Heilkunde > Natur
+Technik > Software > Frontend
+```
+
+The `MediaItem.signature` field always contains the pre-computed signature string:
+
+```typescript
+export interface MediaItem {
+  id: string;
+  title: string;
+  signature: string; // e.g. "Allgemein" or "Heilkunde > Natur"
+  // ...
+}
+```
+
+Signatures are displayed on media cards directly beneath the title, and in the inline media player.
+
+## Default categories
+
+The following top-level categories are used in the default MyLights setup:
+
+- **Allgemein** — general-purpose, uncategorized media
+- **Natur** — nature and outdoor content
+- **Technik** — technical and technology-related media
+- **Menschen** — people and social content
+
+You can add sub-categories to any of these by inserting rows with the appropriate `parentID` directly in the database.
+
+## Sidebar category filter
+
+When the **Home** view is active, the sidebar displays category pills for each top-level category. Clicking a pill:
+
+1. Sets `activeCategory` to the category's signature string.
+2. Writes `?cat=<signature>` to the URL.
+3. Passes the signature as the `query` argument to `searchMedia()`.
+
+```tsx
+// frontend/app/(dashboard)/page.tsx
+const finalQuery = activeCategory ? activeCategory : searchQuery;
+const results = await searchMedia(finalQuery, backendType);
+```
+
+When `activeCategory` is set, it takes precedence over the text search bar. Clicking the active pill again (or navigating away and back) clears the filter.
+
+## Multi-level filtering with `>`
+
+To filter to a specific sub-category, you can type the full signature directly into the search bar using the `>` separator:
+
+```
+Heilkunde > Natur
+```
+
+The PHP backend splits on `>`, trims whitespace from each segment, and matches media whose category hierarchy contains all specified levels in order. See [Search](/features/search#category-signature-search) for full details.
+
+## Kategorien view
+
+Click **Kategorien** (grid icon) in the left sidebar to open a dedicated category browser. This view lists all available categories and lets you navigate the hierarchy to filter your library.
+
+<Tip>
+To add a new folder source for automatic category discovery, click **Ordner hinzufügen** at the bottom of the sidebar category section. This feature is currently planned — clicking it shows a prompt for future implementation.
+</Tip>

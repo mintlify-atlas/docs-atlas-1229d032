@@ -1,0 +1,85 @@
+---
+title: Favorites
+description: Like and save media items to your personal favorites list in MyLights.
+---
+
+Favorites let you bookmark any media item so you can find it again quickly. Liked items are stored locally in your browser and accessible from the **Favoriten** view in the sidebar.
+
+## Liking a media item
+
+<Steps>
+  <Step title="Open a media item">
+    Click any card in the media grid to open the inline player overlay.
+  </Step>
+  <Step title="Click Favorit">
+    Press the **Favorit** button in the player controls to toggle the liked state.
+  </Step>
+  <Step title="View your favorites">
+    Click **Favoriten** in the left sidebar (heart icon) to see all liked items.
+  </Step>
+</Steps>
+
+## Storage
+
+Favorites are stored in the browser's `localStorage` under the key `liked_media` as a JSON-serialized array of `MediaItem` objects.
+
+```typescript
+// frontend/types/media.ts
+export interface MediaItem {
+  id: string;
+  title: string;
+  description?: string;
+  type: MediaType | string;
+  signature: string; // e.g. "Allgemein" or "Heilkunde > Natur"
+  url: string;
+  thumbnail: string;
+  duration?: string;
+  uploadDate?: string;
+}
+```
+
+The full item object is saved — not just the ID — so the Favorites view can display media cards without an additional API call.
+
+## Toggle logic
+
+The `toggleFavorite` function in `frontend/app/(dashboard)/page.tsx` handles both adding and removing a favorite:
+
+```tsx
+const toggleFavorite = (media: MediaItem) => {
+  const savedLiked = localStorage.getItem('liked_media');
+  let likedArr = savedLiked ? JSON.parse(savedLiked) : [];
+
+  const isLiked = likedArr.some((item: any) => item.id === media.id);
+
+  if (isLiked) {
+    likedArr = likedArr.filter((item: any) => item.id !== media.id);
+  } else {
+    likedArr.push(media);
+  }
+
+  localStorage.setItem('liked_media', JSON.stringify(likedArr));
+};
+```
+
+Calling the function on an already-liked item removes it from the array. Calling it on an unliked item appends it.
+
+## Favorites count in the stats dashboard
+
+The stats dashboard (shown on the Images tab with no active search) reads the `liked_media` array from localStorage at render time and displays the count alongside other library stats.
+
+```tsx
+// frontend/app/(dashboard)/page.tsx
+const [stats, setStats] = useState({
+  videos: 0, images: 0, sounds: 0, total: 0,
+  liked: 0,         // <-- derived from localStorage
+  playlists: 0, categories: 0, totalSize: 0, folders: 1
+});
+```
+
+## Favorites view
+
+The **Favoriten** sidebar item (heart icon, label `Favoriten`) switches the active view to `liked`. This view reads `liked_media` from localStorage and renders the same `MediaCard` grid used in the main browser.
+
+<Note>
+Favorites are browser-local and not synced to the backend database. Clearing your browser's localStorage or switching browsers will reset your favorites list.
+</Note>

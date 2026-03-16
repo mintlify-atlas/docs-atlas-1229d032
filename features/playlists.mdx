@@ -1,0 +1,59 @@
+---
+title: Playlists
+description: Group media items into custom playlists in MyLights.
+---
+
+Playlists allow you to collect media items into named groups for later playback. The Playlists feature is currently in progress — the core UI and data model are in place, with full persistence and playback under active development.
+
+## Accessing playlists
+
+Click **Playlists** (list-music icon) in the left sidebar to open the Playlists view. The sidebar nav item is always visible regardless of the active media type tab.
+
+## Adding media to a playlist
+
+<Steps>
+  <Step title="Open a media item">
+    Click any card in the media grid to open the inline player overlay.
+  </Step>
+  <Step title="Click Zur Playlist">
+    Press the **Zur Playlist** button in the player controls.
+  </Step>
+  <Step title="Confirmation">
+    A browser alert displays `"Zu Playlist hinzugefügt"`. Full playlist selection and management UI is planned.
+  </Step>
+</Steps>
+
+<Warning>
+The **Zur Playlist** button currently shows a confirmation alert only. Items are not yet persisted to a playlist data structure. This feature is under active development.
+</Warning>
+
+## Playlists count in the stats dashboard
+
+The stats dashboard (shown on the Images tab with no active search) tracks the current playlist count:
+
+```tsx
+const [stats, setStats] = useState({
+  videos: 0, images: 0, sounds: 0, total: 0, liked: 0,
+  playlists: 0,   // <-- playlist count shown in dashboard
+  categories: 0, totalSize: 0, folders: 1
+});
+```
+
+## Planned data model
+
+Playlists will follow the same localStorage-first approach used by [favorites](/features/favorites) and [history](/features/history). Each playlist will store an array of `MediaItem` objects:
+
+```typescript
+interface Playlist {
+  id: string;
+  name: string;
+  items: MediaItem[];
+  createdAt: string;
+}
+```
+
+Playlist data will be stored in `localStorage` under a key such as `playlists`, serialized as a JSON array of `Playlist` objects.
+
+<Note>
+Because playlists will be browser-local, they will not sync across devices or browsers. A future backend-persisted implementation may be added in a later release.
+</Note>

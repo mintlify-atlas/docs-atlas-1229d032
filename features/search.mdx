@@ -1,0 +1,121 @@
+---
+title: Search
+description: How to search for media by title, description, or category in MyLights.
+---
+
+MyLights provides a full-text and category-aware search powered by the PHP backend. You can search from the navbar search bar or filter by category from the sidebar.
+
+## Search bar and URL parameters
+
+The search bar is located in the top navbar. When you submit a query:
+
+1. The value is written to the URL as `?q=<query>`.
+2. The frontend reads `?q=` on load and pre-populates the search bar.
+3. The query is passed to `searchMedia()` along with the active media type.
+
+```typescript
+// frontend/lib/api-client.ts
+
+/**
+ * Searches media from the PHP backend.
+ * @param query Search text or signature (e.g., "Heilkunde > Natur")
+ * @param type Filter by type: Foto, Video, Sound
+ */
+export async function searchMedia(query: string = '', type: string = ''): Promise<MediaItem[]> {
+  const params = new URLSearchParams();
+  if (query) params.append('query', query);
+  if (type) params.append('type', type);
+
+  const url = `${BASE_URL}/search.php?${params.toString()}`;
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return await response.json() as MediaItem[];
+}
+```
+
+## Backend search logic
+
+The PHP `search.php` endpoint matches results using SQL `LIKE` queries across three fields:
+
+- `title` — the media item's title
+- `description` — the optional description field
+- `category name` — the name of the category the item belongs to
+
+```php
+// backend/api/search.php
+// Text search matches title LIKE, description LIKE, or category name LIKE
+$type_map = [
+    'Foto'  => 'image',
+    'Video' => 'video',
+    'Sound' => 'audio'
+];
+```
+
+<Note>
+The `type` parameter uses German display names (`Foto`, `Video`, `Sound`). The frontend maps the internal tab value to these names before calling the API.
+</Note>
+
+## Category signature search
+
+Categories are stored as hierarchical path strings called **signatures**, using `>` as a separator:
+
+```
+Heilkunde > Natur
+Technik > Software > Frontend
+```
+
+To search within a specific category path, use the `>` syntax directly in the search bar:
+
+```
+Heilkunde > Natur
+```
+
+The backend splits the query on `>`, trims each segment, and matches media that belongs to categories matching **all** of the specified levels in order.
+
+<Tip>
+Category signature search is case-sensitive to the category names stored in your database. Match the exact casing used when the category was created.
+</Tip>
+
+## Combining type filter and search
+
+The media type tab and the search query are applied together. The frontend constructs the final query like this:
+
+```tsx
+// frontend/app/(dashboard)/page.tsx
+const backendType =
+  mediaType === 'video' ? 'Video' :
+  mediaType === 'image' ? 'Foto' :
+  'Sound';
+
+const finalQuery = activeCategory ? activeCategory : searchQuery;
+const results = await searchMedia(finalQuery, backendType);
+```
+
+If a category filter is active (`activeCategory`), it takes precedence over the text search query.
+
+## Category filter (`?cat=`)
+
+Clicking a category pill in the sidebar sets `activeCategory` and writes `?cat=<signature>` to the URL. This bypasses the text search bar and sends the full category signature as the query.
+
+```
+?cat=Heilkunde > Natur
+```
+
+Clearing the category pill (or navigating back to Home) resets `activeCategory` to an empty string, restoring normal search behavior.
+
+## Example queries
+
+<AccordionGroup>
+  <Accordion title="Search by title keyword">
+    Type `Berge` in the search bar. The backend returns all media items where the title or description contains "Berge".
+  </Accordion>
+  <Accordion title="Search within a top-level category">
+    Type `Natur`. The backend matches any media item whose category name contains "Natur", including items in sub-categories like `Natur > Wasser`.
+  </Accordion>
+  <Accordion title="Search by full category signature">
+    Type `Heilkunde > Natur`. The backend filters to media that belongs to the `Natur` sub-category inside `Heilkunde`.
+  </Accordion>
+  <Accordion title="Filter videos only">
+    Switch to the **Videos** tab, then type your query. The API call includes `type=Video` alongside your query.
+  </Accordion>
+</AccordionGroup>

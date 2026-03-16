@@ -1,0 +1,109 @@
+---
+title: Frontend setup
+description: Install and run the Next.js frontend for MyLights.
+---
+
+## Prerequisites
+
+<Info>
+  The frontend requires **Node.js 18 or later** and **npm**. Verify your versions before proceeding:
+  ```bash
+  node --version
+  npm --version
+  ```
+</Info>
+
+Before setting up the frontend, make sure:
+
+- Node.js 18+ is installed
+- The backend is running and accessible at `http://localhost/backend/api` — complete the [backend setup](/setup/backend) first
+
+## Setup steps
+
+<Steps>
+  <Step title="Install dependencies">
+    From the project root, navigate into the `frontend/` directory and install npm packages:
+
+    ```bash
+    cd frontend
+    npm install
+    ```
+  </Step>
+
+  <Step title="Verify the API base URL">
+    The frontend communicates with the backend through a single constant defined in `frontend/lib/api-client.ts`:
+
+    ```typescript
+    const BASE_URL = 'http://localhost/backend/api';
+    ```
+
+    This value assumes Apache is serving the backend at the default XAMPP path. If you placed the backend files in a different `htdocs` subdirectory, update `BASE_URL` to match.
+  </Step>
+
+  <Step title="Start the development server">
+    ```bash
+    npm run dev
+    ```
+
+    The development server starts on port **4000**. Open `http://localhost:4000` in your browser.
+
+    <Note>
+      The port is configured in `package.json` via the `next dev -p 4000` flag. If port 4000 is already in use, change the flag to an available port and update `BASE_URL` references if needed.
+    </Note>
+  </Step>
+</Steps>
+
+## Available scripts
+
+The `package.json` defines three scripts:
+
+```json
+{
+  "scripts": {
+    "dev": "next dev -p 4000",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+```
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| Development | `npm run dev` | Starts the Next.js dev server with hot reload on port 4000. |
+| Build | `npm run build` | Compiles an optimised production build in the `.next/` directory. |
+| Production | `npm start` | Serves the compiled production build. Run `npm run build` first. |
+
+### Running a production build
+
+<Steps>
+  <Step title="Build the application">
+    ```bash
+    npm run build
+    ```
+  </Step>
+  <Step title="Start the production server">
+    ```bash
+    npm start
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  `npm start` will fail if `npm run build` has not been run or if the previous build is stale. Always rebuild after pulling new changes.
+</Warning>
+
+## Changing the API base URL
+
+If you move the backend to a different host, port, or path, update the `BASE_URL` constant in `frontend/lib/api-client.ts`:
+
+```typescript
+// Default — XAMPP serving from htdocs/
+const BASE_URL = 'http://localhost/backend/api';
+
+// Example: backend on a different port
+const BASE_URL = 'http://localhost:8080/api';
+```
+
+<Tip>
+  For team environments or deployments, consider moving `BASE_URL` to an environment variable (e.g., `process.env.NEXT_PUBLIC_API_URL`) so the URL can be configured without modifying source code.
+</Tip>

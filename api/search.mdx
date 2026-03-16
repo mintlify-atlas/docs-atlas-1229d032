@@ -1,0 +1,115 @@
+---
+title: 'Search'
+description: 'Search and filter media items by title, description, category, and type.'
+---
+
+<Note>
+`GET /backend/api/search.php`
+</Note>
+
+Returns a JSON array of media items. When called with no parameters, all media in the database is returned. Combine `query` and `type` to narrow results.
+
+## Query parameters
+
+<ParamField query="query" type="string">
+  Free-text search term matched against media title, description, and category name.
+
+  Use `>` as a separator to search by category path. For example, `Heilkunde > Natur` matches media assigned to both the `Heilkunde` and `Natur` categories.
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter results to a single media type. Accepted values:
+
+  | Value | Maps to |
+  |-------|---------|
+  | `Foto` | `image` |
+  | `Video` | `video` |
+  | `Sound` | `audio` |
+
+  Values are case-sensitive. An unrecognised value is ignored and all types are returned.
+</ParamField>
+
+## Response
+
+An array of media objects. Returns an empty array `[]` when no results match.
+
+<ResponseField name="id" type="string" required>
+  Unique numeric identifier for the media item.
+</ResponseField>
+
+<ResponseField name="title" type="string" required>
+  Title of the media item.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Description of the media item. May be `null` if not set.
+</ResponseField>
+
+<ResponseField name="type" type="string" required>
+  Normalised media type: `"image"`, `"video"`, or `"audio"`.
+</ResponseField>
+
+<ResponseField name="signature" type="string" required>
+  Category path assigned to the media item, with levels separated by ` > `. Example: `"Natur > Tiere"`.
+</ResponseField>
+
+<ResponseField name="url" type="string" required>
+  File path to the media file.
+</ResponseField>
+
+<ResponseField name="thumbnail" type="string" required>
+  Thumbnail path. For video and audio this is the same value as `url`.
+</ResponseField>
+
+<ResponseField name="uploadDate" type="string" required>
+  Upload timestamp in `YYYY-MM-DD HH:MM:SS` format.
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash Fetch all media
+curl "http://localhost/backend/api/search.php"
+```
+
+```bash Search by title with type filter
+curl "http://localhost/backend/api/search.php?query=nature&type=Video"
+```
+
+```bash Filter by category path
+curl "http://localhost/backend/api/search.php?query=Heilkunde+%3E+Natur"
+```
+
+```typescript TypeScript client
+import { searchMedia } from '../lib/api-client';
+
+const results = await searchMedia('nature', 'Video');
+```
+
+</CodeGroup>
+
+### Example response
+
+```json
+[
+  {
+    "id": "1",
+    "title": "Sample Video",
+    "description": "A sample video file",
+    "type": "video",
+    "signature": "Natur > Tiere",
+    "url": "/videos/sample.mp4",
+    "thumbnail": "/videos/sample.mp4",
+    "uploadDate": "2024-01-15 10:30:00"
+  }
+]
+```
+
+## Error response
+
+Returns HTTP 500 if the SQL query cannot be prepared:
+
+```json
+{ "error": "SQL Prepare Error" }
+```

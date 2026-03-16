@@ -1,0 +1,94 @@
+---
+title: 'Stats'
+description: 'Retrieve database-wide media statistics including counts, storage totals, and the latest upload timestamp.'
+---
+
+<Note>
+`GET /backend/api/stats.php`
+</Note>
+
+Returns a single JSON object summarising the media library. No parameters are accepted.
+
+## Response
+
+<ResponseField name="total_media" type="number" required>
+  Total count of media items in the database.
+</ResponseField>
+
+<ResponseField name="total_size_mb" type="number" required>
+  Total storage used by all media files, in megabytes, rounded to 2 decimal places.
+</ResponseField>
+
+<ResponseField name="avg_size_kb" type="number" required>
+  Average file size across all media items, in kilobytes, rounded to 2 decimal places.
+</ResponseField>
+
+<ResponseField name="by_type" type="object" required>
+  Media counts broken down by type.
+
+  <Expandable title="properties">
+    <ResponseField name="video" type="number" required>
+      Count of video items.
+    </ResponseField>
+    <ResponseField name="image" type="number" required>
+      Count of image items.
+    </ResponseField>
+    <ResponseField name="audio" type="number" required>
+      Count of audio items.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="latest_upload" type="string">
+  Timestamp of the most recently uploaded media item in `YYYY-MM-DD HH:MM:SS` format. `null` when the database contains no media.
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```bash cURL
+curl "http://localhost/backend/api/stats.php"
+```
+
+```typescript TypeScript client
+import { getStats } from '../lib/api-client';
+
+const stats = await getStats();
+if (stats) {
+  console.log(`Total media: ${stats.total_media}`);
+  console.log(`Storage used: ${stats.total_size_mb} MB`);
+}
+```
+
+</CodeGroup>
+
+### Example response
+
+```json
+{
+  "total_media": 42,
+  "total_size_mb": 1536.25,
+  "avg_size_kb": 37527.44,
+  "by_type": {
+    "video": 20,
+    "image": 15,
+    "audio": 7
+  },
+  "latest_upload": "2024-03-10 14:22:00"
+}
+```
+
+## Notes
+
+<Warning>
+If the `file_size_kb` column is missing from the `media` table schema, `total_size_mb` and `avg_size_kb` will both be `0` and the response will include an additional `warning` field describing the issue.
+</Warning>
+
+## Error response
+
+Returns HTTP 500 on failure:
+
+```json
+{ "error": "message" }
+```

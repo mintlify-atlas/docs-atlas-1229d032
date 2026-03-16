@@ -1,0 +1,133 @@
+---
+title: Media browser
+description: The main grid interface for browsing images, videos, and audio in MyLights.
+---
+
+The media browser is the home view of MyLights. It displays your media library as a responsive card grid, organized by type, with an inline player that opens when you click any item.
+
+## Media type tabs
+
+Three tabs at the top of the grid filter the content by type:
+
+| Tab label | Internal value | Sent to backend |
+|-----------|---------------|-----------------|
+| Bilder (Images) | `image` | `Foto` |
+| Videos | `video` | `Video` |
+| Sounds | `sound` | `Sound` |
+
+The frontend maps the tab selection to the value the PHP API expects:
+
+```tsx
+const backendType =
+  mediaType === 'video' ? 'Video' :
+  mediaType === 'image' ? 'Foto' :
+  'Sound';
+```
+
+Switching tabs immediately refetches media from the API using the new type filter.
+
+## Media cards
+
+Each item in the grid is rendered by the `MediaCard` component. Every card shows:
+
+- **Thumbnail** — for video items, a frame is auto-extracted client-side using FFmpeg/WASM (see [`frontend/lib/thumbnail.ts`](/features/media-browser#auto-thumbnail-extraction)). Images and audio use their stored thumbnail URL.
+- **Type icon** — a `Play` icon for video, `ImageIcon` for images, `Volume2` for audio.
+- **Title** — the media item's title.
+- **Category signature** — displayed beneath the title (e.g., `Allgemein` or `Heilkunde > Natur`).
+- **Duration badge** — shown when `media.duration` is set.
+- **Context menu button** — the `MoreVertical` icon opens per-item actions.
+
+```tsx
+interface MediaCardProps {
+  media: MediaItem;
+  onClick: (id: string) => void;
+  onContextMenu: (e: React.MouseEvent, id: string) => void;
+  isSelected?: boolean;
+  batchMode?: boolean;
+}
+```
+
+### Auto thumbnail extraction
+
+Video thumbnails are extracted entirely in the browser using `@ffmpeg/ffmpeg` (WASM). No server-side processing or pre-generated thumbnails are required.
+
+```typescript
+// frontend/lib/thumbnail.ts
+// extractThumbnail(url: string): Promise<string | null>
+// Returns a blob URL of the extracted frame, or null on failure.
+```
+
+## Inline media player
+
+Clicking a card opens a player overlay without navigating away from the grid. The player renders the correct HTML element based on media type:
+
+| Type | Element |
+|------|---------|
+| `video` | `<video>` with controls |
+| `image` | `<img>` |
+| `audio` | `<audio>` with controls |
+
+The overlay also exposes **Favorit** (favorite toggle) and **Zur Playlist** (add to playlist) actions.
+
+## Stats dashboard
+
+When the **Bilder** tab is active and no search query or category filter is applied, a stats dashboard appears above the grid. It pulls data from the `/backend/api/stats.php` endpoint.
+
+<Note>
+The stats dashboard is only visible on the Images tab with no active search or category filter.
+</Note>
+
+The dashboard displays:
+
+| Stat | Source |
+|------|--------|
+| Total videos | `stats.videos` from API |
+| Total media count | `stats.total` from API |
+| Storage used (MB) | `stats.totalSize` from API |
+| Favorites count | `stats.liked` (localStorage) |
+| Playlists count | `stats.playlists` (localStorage) |
+| Categories count | `stats.categories` from API |
+| Folders | `stats.folders` (always `1`) |
+
+```typescript
+export interface StatsData {
+  total_media: number;
+  total_size_mb: number;
+  avg_size_kb: number;
+  by_type: {
+    image: number;
+    video: number;
+    audio: number;
+    [key: string]: number;
+  };
+  latest_upload: string;
+}
+```
+
+## Sort chips
+
+Three sort options are available as clickable chips above the grid:
+
+- **Neueste** — sort by upload date, newest first
+- **Name** — sort alphabetically by title
+- **Größe** — sort by file size
+
+Selecting a chip re-sorts the current result set client-side.
+
+## Batch mode
+
+Batch mode allows you to select multiple media items at once. When enabled:
+
+- Each card displays a checkbox overlay.
+- `isSelected` and `batchMode` props on `MediaCard` control the visual state.
+- Selected items can be acted on together (e.g., added to a playlist).
+
+```tsx
+// MediaCard renders a checkbox overlay when batchMode is true
+batchMode?: boolean;
+isSelected?: boolean;
+```
+
+## Empty state
+
+When a search or filter returns no results, the grid displays an empty state message prompting you to adjust your search or category filter. No media cards are rendered.

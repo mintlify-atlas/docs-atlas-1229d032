@@ -1,0 +1,158 @@
+---
+title: 'Local development'
+description: 'Run MyLights locally using XAMPP for the backend API and Node.js for the frontend.'
+---
+
+MyLights runs its PHP backend through XAMPP (Apache + MySQL) and its Next.js frontend through Node.js. This page walks you through getting both services running on your machine.
+
+## Prerequisites
+
+Before you begin, install the following:
+
+- **XAMPP** — provides Apache and MySQL. Use a version that includes PHP 8 (XAMPP 8.x). Download from [apachefriends.org](https://www.apachefriends.org/).
+- **Node.js 18+** — required for the Next.js frontend.
+- **git** — to clone the repository.
+
+<Info>
+  XAMPP bundles Apache, MySQL, PHP, and phpMyAdmin into a single installer. You do not need to install these separately.
+</Info>
+
+## Starting XAMPP
+
+<Steps>
+  <Step title="Open the XAMPP control panel">
+    Launch the XAMPP Control Panel from your applications menu or start menu.
+
+    <Tabs>
+      <Tab title="Windows">
+        Open **XAMPP Control Panel** from the Start menu or `C:\xampp\xampp-control.exe`.
+      </Tab>
+      <Tab title="Linux">
+        ```bash
+        sudo /opt/lampp/manager-linux-x64.run
+        ```
+      </Tab>
+      <Tab title="macOS">
+        Open **XAMPP** from `/Applications/XAMPP/` or via Spotlight.
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Enable Apache and MySQL">
+    In the control panel, click **Start** next to both **Apache** and **MySQL**. Both module status indicators should turn green.
+
+    <Warning>
+      If Apache fails to start, another process may already be using port 80. See the [troubleshooting section](#troubleshooting) below.
+    </Warning>
+  </Step>
+
+  <Step title="Confirm services are running">
+    Open your browser and navigate to `http://localhost`. You should see the XAMPP welcome page. phpMyAdmin is available at `http://localhost/phpmyadmin`.
+  </Step>
+</Steps>
+
+## Service URLs
+
+Once XAMPP and the frontend dev server are running, use the following URLs:
+
+| Service | URL | Notes |
+|---|---|---|
+| Frontend (Next.js) | `http://localhost:4000` | Started with `npm run dev` |
+| Backend API (PHP) | `http://localhost/backend/api/` | Served by Apache |
+| phpMyAdmin | `http://localhost/phpmyadmin` | Database management |
+| Apache | port 80 | HTTP |
+| MySQL | port 3306 | Database |
+
+## Starting the frontend
+
+With XAMPP running, start the Next.js dev server:
+
+```bash
+npm run dev
+```
+
+This starts the frontend on `http://localhost:4000` as defined in `package.json`:
+
+```json
+{
+  "scripts": {
+    "dev": "next dev -p 4000",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+```
+
+## htdocs paths
+
+The XAMPP web root (`htdocs`) is where PHP files are served from. Its location depends on your OS:
+
+<Tabs>
+  <Tab title="Windows">
+    ```
+    C:\xampp\htdocs\
+    ```
+  </Tab>
+  <Tab title="Linux">
+    ```bash
+    /opt/lampp/htdocs/
+    ```
+  </Tab>
+  <Tab title="macOS">
+    ```
+    /Applications/XAMPP/htdocs/
+    ```
+  </Tab>
+</Tabs>
+
+The MyLights backend API is deployed to a `mylights-api` subdirectory inside `htdocs`. See [Deployment scripts](/deployment/scripts) for how to automate this.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Port 80 already in use (Apache won't start)">
+    Another service is listening on port 80. Common causes on Windows include IIS, Skype, or Microsoft Teams.
+
+    To identify the process:
+
+    <Tabs>
+      <Tab title="Windows">
+        ```powershell
+        netstat -ano | findstr :80
+        ```
+        Find the PID in Task Manager and stop the conflicting service, or change XAMPP's Apache port in the XAMPP control panel under **Config > httpd.conf**.
+      </Tab>
+      <Tab title="Linux / macOS">
+        ```bash
+        sudo lsof -i :80
+        ```
+        Stop the conflicting service or change Apache's port in `/opt/lampp/etc/httpd.conf` (Linux) or the equivalent macOS path.
+      </Tab>
+    </Tabs>
+
+    <Note>
+      On Windows, Skype and Microsoft Teams can silently claim port 80. Quit these apps before starting XAMPP, or configure them to use a different port.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Port 3306 already in use (MySQL won't start)">
+    Another MySQL instance is running on port 3306. You can either stop the conflicting service, or change the port in both XAMPP and MyLights:
+
+    1. In the XAMPP control panel, open **Config > my.ini** and change `port=3306` to `port=3307`.
+    2. Update `backend/config/db.php` to match the new port.
+
+    ```php
+    // backend/config/db.php
+    // Change the port to match your MySQL configuration
+    $port = 3307;
+    ```
+  </Accordion>
+
+  <Accordion title="IIS on Windows is blocking port 80">
+    Windows ships with IIS (Internet Information Services) which may be enabled and holding port 80. Disable it:
+
+    1. Open **Turn Windows features on or off** from the Start menu.
+    2. Uncheck **Internet Information Services**.
+    3. Click OK and restart, then start Apache in XAMPP.
+  </Accordion>
+</AccordionGroup>
