@@ -1,0 +1,68 @@
+{
+  "projectType": "saas",
+  "projectName": "MyLights Media Browser",
+  "projectDescription": "A self-hosted local media browser for managing, searching, and playing video, image, and audio files, built with Next.js and a PHP/MySQL backend.",
+  "theme": "palm",
+  "primaryColor": "#e63946",
+  "lightColor": "#ff6b6b",
+  "darkColor": "#c1121f",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Setup",
+            "pages": ["setup/database", "setup/backend", "setup/frontend"]
+          },
+          {
+            "group": "Features",
+            "pages": ["features/media-browser", "features/search", "features/favorites", "features/history", "features/playlists", "features/categories"]
+          },
+          {
+            "group": "Deployment",
+            "pages": ["deployment/local", "deployment/scripts"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["api/overview"]
+          },
+          {
+            "group": "Endpoints",
+            "pages": ["api/search", "api/stats", "api/auth"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Media grid browser for images, videos, and audio files",
+    "Real-time search across titles, descriptions, and categories",
+    "Automatic video thumbnail extraction via FFmpeg",
+    "Category-based filtering with hierarchical category signatures",
+    "Favorites (liked media) stored in localStorage",
+    "Watch history tracking (last 50 items) in localStorage",
+    "Playlist management",
+    "Database statistics dashboard (total media, storage usage, media by type)",
+    "Self-hosted with XAMPP (Apache + MySQL)",
+    "Deployment scripts for Windows (PowerShell) and Linux/macOS (Bash)"
+  ],
+  "publicApiSurface": [
+    "GET /backend/api/search.php?query={query}&type={Foto|Video|Sound}",
+    "GET /backend/api/stats.php",
+    "GET /backend/api/auth.php",
+    "searchMedia(query: string, type: string): Promise<MediaItem[]>",
+    "getStats(): Promise<StatsData | null>",
+    "MediaItem { id, title, description, type, signature, url, thumbnail, duration, uploadDate }",
+    "StatsData { total_media, total_size_mb, avg_size_kb, by_type, latest_upload }"
+  ]
+}
